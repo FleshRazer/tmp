@@ -26,11 +26,19 @@ def unzip_filtered_paranmt():
         _file.extractall(os.path.dirname(filtered_paranmt_archive_filename))
 
 
+def get_filtered_paranmt_df():
+    if not os.path.exists(filtered_paranmt_tsv_filename):
+        unzip_filtered_paranmt()
+
+    return read_csv("tmp/data/raw/filtered.tsv", sep="\t")
+
+
 def get_filtered_paranmt_hf():
     if not os.path.exists(filtered_paranmt_tsv_filename):
         unzip_filtered_paranmt()
 
-    df = read_csv("tmp/data/raw/filtered.tsv", sep="\t")
+    df = get_filtered_paranmt_df()
+    df = df[df["reference"].str.len() <= 250]
     dataset = Dataset.from_dict({column: df.loc[:, column].to_list() for column in df.columns})
 
     return dataset

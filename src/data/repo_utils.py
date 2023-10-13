@@ -14,6 +14,8 @@ filtered_paranmt_filename = "tmp/data/raw/filtered_paranmt.zip"
 
 
 def setup_repository():
+    os.system(f"pip install -q -r tmp/requirements.txt")
+
     os.system(f"zip -FF {llama2_checkpoint_s_filename} --out {llama2_checkpoint_filename}")
     os.system(f"unzip -o {llama2_checkpoint_filename} -d {os.path.dirname(llama2_checkpoint_filename)}")
 

@@ -1,0 +1,10 @@
+transformers
+bitsandbytes
+accelerate
+datasets
+peft
+tokenizers
+sentencepiece
+scikit-learn
+wandb
+fire

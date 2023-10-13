@@ -31,3 +31,51 @@ def get_filtered_paranmt_hf():
     dataset = Dataset.from_dict({column: df.loc[:, column].to_list() for column in df.columns})
 
     return dataset
+
+
+def get_filtered_paranmt_tuning_hf(num_shards: int=4, test_size: float=0.25, seed: int=None):
+    dataset = get_filtered_paranmt_hf()
+    dataset = dataset.shard(num_shards=num_shards, index=0)
+
+    prompt_template = (
+        f"Detoxify the text, output only edited text:\n{{reference}}\n---\nDetoxified text:\n{{translation}}{{eos_token}}"
+    )
+
+    def apply_prompt_template(sample):
+        return {
+            "sequence": prompt_template.format(
+                reference=sample["reference"],
+                translation=sample["translation"],
+                eos_token=tokenizer.eos_token,
+            )
+        }
+
+    dataset = dataset.map(apply_prompt_template, remove_columns=list(dataset.features))
+    dataset = dataset.map(lambda x: tokenizer(x["sequence"]), remove_columns=list(dataset.features), batched=True)
+    dataset = dataset.train_test_split(test_size=test_size, seed=seed)
+    return dataset
+
+
+def get_filtered_paranmt_inference_hf(num_shards: int=4, test_size: float=0.25, seed: int=None):
+    dataset = get_filtered_paranmt_hf()
+    dataset = dataset.shard(num_shards=num_shards, index=0)
+    
+    dataset = dataset.train_test_split(test_size=test_size, seed=seed)
+    dataset = dataset["test"]
+    
+    prompt_template = (
+        f"Detoxify the text, output only edited text:\n{{reference}}\n---\nDetoxified text: "
+    )
+    
+    def apply_prompt_template(sample):
+        return {
+            "sequence": prompt_template.format(
+                reference=sample["reference"],
+            )
+        }
+    
+    remove_columns = list(dataset.features)
+    remove_columns.remove("reference")
+    remove_columns.remove("translation")
+    dataset = dataset.map(apply_prompt_template, remove_columns=remove_columns)
+    return dataset
